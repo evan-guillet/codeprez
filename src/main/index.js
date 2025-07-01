@@ -54,6 +54,11 @@ app.whenReady().then(() => {
     return result.filePaths
   })
 
+  ipcMain.on('folder:selected', (event, folderPath) => {
+    console.log('Path selection :', folderPath)
+    // TODO: Handle the selected folder path 'folderPath' and delete console.log
+  })
+
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 

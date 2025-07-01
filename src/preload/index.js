@@ -2,7 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 // Custom APIs for renderer
 const api = {
-  openFileDialog: (options) => ipcRenderer.invoke('dialog:openFile', options)
+  openFileDialog: (options) => ipcRenderer.invoke('dialog:openFile', options),
+  sendFolderPath: (folderPath) => ipcRenderer.send('folder:selected', folderPath)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

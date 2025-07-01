@@ -1,8 +1,7 @@
 <script setup>
-import SelectFiles from './components/SelectFiles.vue'
+import SelectFiles from './components/SelectPath.vue'
 </script>
 
 <template>
   <SelectFiles />
-  <div></div>
 </template>
