@@ -1,57 +1,63 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
-import { fileURLToPath } from 'url'
-import fs from 'fs/promises'
 
-import { createCodePrez } from '../utils/archiver.js'
-import { unzipCodePrez } from '../utils/unzipper.js'
-import { parseMarkdownToSlides } from '../utils/markdown.js'
+import { createCodeprezArchive } from '../utils/archiver.js'
+import { extractCodeprezArchive } from '../utils/extract.js'
+import { parsePresentationMarkdown } from '../utils/markdown.js'
+import { runCommand } from '../utils/runner.js'
 
-// Recréer __dirname en ES module
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-let mainWindow
-let tempDir
+let mainWindow = null
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      preload: path.join(__dirname, '../preload/preload.cjs')
     }
   })
-
-  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+  // en dev on pointe sur le serveur Vite
+  mainWindow.loadURL('http://localhost:5173')
 }
 
 app.whenReady().then(createWindow)
-
-app.on('window-all-closed', async () => {
-  if (tempDir) await fs.rm(tempDir, { recursive: true, force: true })
+app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
-
-ipcMain.handle('create-codeprez', async (event, data) => {
-  try {
-    await createCodePrez(data)
-    return { success: true }
-  } catch (e) {
-    return { success: false, error: e.message }
-  }
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-ipcMain.handle('open-codeprez', async (event, filePath) => {
-  try {
-    tempDir = await unzipCodePrez(filePath)
-    const configRaw = await fs.readFile(path.join(tempDir, 'config.json'), 'utf8')
-    const mdRaw = await fs.readFile(path.join(tempDir, 'presentation.md'), 'utf8')
-    const slides = parseMarkdownToSlides(mdRaw, configRaw, tempDir)
-    return { success: true, slides, config: JSON.parse(configRaw), tempDir }
-  } catch (e) {
-    return { success: false, error: e.message }
-  }
+// ------------------------------------------------------------------
+// IPC handlers
+// ------------------------------------------------------------------
+ipcMain.handle('dialog:choose-folder', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  })
+  return canceled ? null : filePaths[0]
 })
+
+ipcMain.handle('dialog:choose-file', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'CodePrez', extensions: ['codeprez'] }]
+  })
+  return canceled ? null : filePaths[0]
+})
+
+ipcMain.handle('pack', (_e, src, dest) => tryWrap(() => createCodeprezArchive(src, dest)))
+ipcMain.handle('unpack', (_e, archive) => tryWrap(() => extractCodeprezArchive(archive)))
+ipcMain.handle('parse', (_e, folder) => tryWrap(() => parsePresentationMarkdown(folder)))
+ipcMain.handle('run-command', (_e, { command, tempDir }) =>
+  runCommand(command, tempDir, (data) => mainWindow.webContents.send('command-output', data))
+)
+
+// ------------------------------------------------------------------
+function tryWrap(promiseFactory) {
+  return promiseFactory()
+    .then((r) => ({ success: true, ...r }))
+    .catch((e) => ({ success: false, error: e.message }))
+}
