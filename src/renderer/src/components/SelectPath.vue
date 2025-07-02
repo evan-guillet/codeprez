@@ -17,5 +17,5 @@ async function selectFiles() {
 
 <template>
   <button @click="selectFiles">Ajouter une présentation</button>
-  <span v-if="selectedPath" style="margin-left: 1em;">{{ selectedPath }}</span>
+  <span v-if="selectedPath">{{ selectedPath }}</span>
 </template>
