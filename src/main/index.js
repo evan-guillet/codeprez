@@ -1,11 +1,30 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import path, { join } from 'path'
+import { fileURLToPath } from 'url'
+import fs from 'fs/promises'
+
+
+import { unzipCodePrez } from '../utils/unzipper.js'
+import { parseMarkdownToSlides } from '../utils/markdown.js'
+
+// Pour HMR/devtools si tu utilises electron-vite ou équivalent
+const is = { dev: process.env.NODE_ENV === 'development' }
+const optimizer = {
+  watchWindowShortcuts: () => {}
+}
+
+// Recréer __dirname en ES module
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Définir le chemin de l'icône
+const icon = path.join(__dirname, '../../resources/icon.png')
+
+let mainWindow
+let tempDir
 
 function createWindow() {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
@@ -13,7 +32,7 @@ function createWindow() {
     icon,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/preload.js'), // Utilise preload.js pour window.electronAPI
       sandbox: true,
       webSecurity: true,
       enableRemoteModule: false,
@@ -40,23 +59,31 @@ function createWindow() {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  app.setAppUserModelId('com.electron')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  ipcMain.handle('dialog:openFile', async (event, options) => {
-    const result = await dialog.showOpenDialog(options)
-    return result.filePaths
+  app.on('window-all-closed', async () => {
+    if (tempDir) await fs.rm(tempDir, { recursive: true, force: true })
+    if (process.platform !== 'darwin') app.quit()
+  })
+
+  ipcMain.handle('open-codeprez', async (event, filePath) => {
+    try {
+      tempDir = await unzipCodePrez(filePath)
+      const configRaw = await fs.readFile(path.join(tempDir, 'config.json'), 'utf8')
+      const mdRaw = await fs.readFile(path.join(tempDir, 'presentation.md'), 'utf8')
+      const slides = parseMarkdownToSlides(mdRaw, configRaw, tempDir)
+      return { success: true, slides, config: JSON.parse(configRaw), tempDir }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
   })
 
   ipcMain.on('folder:selected', (event, folderPath) => {
@@ -70,20 +97,12 @@ app.whenReady().then(() => {
   createWindow()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

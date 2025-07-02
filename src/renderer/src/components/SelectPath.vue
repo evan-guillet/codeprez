@@ -1,21 +1,31 @@
 <script setup>
 import { ref } from 'vue'
 
-const selectedPath = ref('')
+const selectedFile = ref(null)
+const emit = defineEmits(['startPresentation'])
 
-async function selectFiles() {
-  const options = {
-    properties: ['openDirectory']
+function onFileChange(event) {
+  const file = event.target.files[0]
+  if (file) selectedFile.value = file
+  else selectedFile.value = null
+}
+
+async function startPresentation() {
+  if (!selectedFile.value) {
+    alert('Choisissez un fichier .codeprez avant de commencer')
+    return
   }
-  const paths = await window.api.openFileDialog(options)
-  if (paths && paths[0]) {
-    selectedPath.value = paths[0]
-    window.api.sendFolderPath(paths[0])
-  }
+  const res = await window.electronAPI.openCodePrez(selectedFile.value.path)
+  emit('startPresentation', res)
 }
 </script>
 
 <template>
-  <button @click="selectFiles">Ajouter une présentation</button>
-  <span v-if="selectedPath">{{ selectedPath }}</span>
+  <div>
+    <h2>Ouvrir une présentation .codeprez</h2>
+    <input type="file" @change="onFileChange" accept=".codeprez" />
+    <button :disabled="!selectedFile" @click="startPresentation">
+      Commencer la présentation
+    </button>
+  </div>
 </template>
