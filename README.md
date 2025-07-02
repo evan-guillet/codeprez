@@ -1,34 +1,42 @@
-# codeprez
+# CodePrez 🎤💻
 
-An Electron application with Vue
+**CodePrez** est une application de présentation interactive de code. Elle permet de visualiser, tester et commenter du code en live comme un·e pro du pitch technique.
 
-## Recommended IDE Setup
+---
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
+## 🚀 Fonctionnalités attendues
 
-## Project Setup
+- 📂 Affichage et navigation dans une structure de projet (fichiers/dossiers)
+- 🧠 Aperçu du contenu de fichiers de code avec coloration syntaxique
+- ✍️ Annotation/commentaire sur des lignes de code
+- ⚡ Exécution ou simulation de scripts (selon le langage visé)
+- 🎯 Possibilité de créer des "slides" à partir de bouts de code
 
-### Install
+---
 
+## 🖥️ Lancer l'interface (Node.js)
 ```bash
-$ npm install
+npm run dev
+```
+## Tester les fonction
+```bash
+node ./testarchive.js ../../example-presentation
+
+node ./testextract.js  ./archive/outpit.codeprez
+
+node ./testparse ../../example-presentation
+
+
 ```
 
-### Development
+### Prérequis
+
+- Node.js >= 18
+- npm
+
+### Installation
 
 ```bash
-$ npm run dev
-```
-
-### Build
-
-```bash
-# For windows
-$ npm run build:win
-
-# For macOS
-$ npm run build:mac
-
-# For Linux
-$ npm run build:linux
-```
+git clone https://github.com/ton-user/codeprez.git
+cd codeprez
+npm install
