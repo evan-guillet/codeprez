@@ -23,9 +23,7 @@ async function startPresentation() {
 <template>
   <div>
     <h2>Ouvrir une présentation .codeprez</h2>
-    <input type="file" @change="onFileChange" accept=".codeprez" />
-    <button :disabled="!selectedFile" @click="startPresentation">
-      Commencer la présentation
-    </button>
+    <input type="file" accept=".codeprez" @change="onFileChange" />
+    <button :disabled="!selectedFile" @click="startPresentation">Commencer la présentation</button>
   </div>
 </template>
