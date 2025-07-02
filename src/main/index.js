@@ -10,7 +10,7 @@ import { parseMarkdownToSlides } from '../utils/markdown.js'
 
 // Détection du mode développement (utile pour le hot reload, devtools, etc.)
 const is = { dev: process.env.NODE_ENV === 'development' }
-// Placeholder pour la gestion des raccourcis clavier (ex : F12 pour devtools)
+// Placeholder pour la gestion des raccourcis clavier (ex: F12 pour devtools)
 const optimizer = {
   watchWindowShortcuts: () => {}
 }
@@ -56,7 +56,7 @@ function createWindow() {
     return { action: 'deny' } // Empêche l'ouverture dans une nouvelle fenêtre Electron
   })
 
-  // En mode développement, charge l'URL du serveur de dev (ex : Vite)
+  // En mode développement, charge l'URL du serveur de dev (ex: Vite)
   // En production, charge le fichier HTML local
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
