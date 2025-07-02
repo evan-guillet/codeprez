@@ -1,9 +1,15 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import fs from 'fs/promises'
+
 import { createCodePrez } from '../utils/archiver.js'
 import { unzipCodePrez } from '../utils/unzipper.js'
 import { parseMarkdownToSlides } from '../utils/markdown.js'
+
+// Recréer __dirname en ES module
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 let mainWindow
 let tempDir
@@ -13,10 +19,10 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/preload.js'),
+      preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
-      nodeIntegration: false,
-    },
+      nodeIntegration: false
+    }
   })
 
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
